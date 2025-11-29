@@ -80,16 +80,150 @@ AccessiAI checks compliance with WCAG 2.1 Level AA standards, including:
 - Descriptive alt text for all images
 - Proper ARIA labels for interactive elements
 
+## Sample Output
+
+### Report Structure
+
+AccessiAI generates a comprehensive JSON report with the following structure:
+
+```json
+{
+  "url": "https://example.com",
+  "timestamp": "2025-11-29T10:00:00Z",
+  "summary": {
+    "total_issues": 5,
+    "alt_text_issues": 2,
+    "contrast_issues": 2,
+    "aria_issues": 1
+  },
+  "issues": {
+    "alt_text": [
+      {
+        "element_id": "img_1",
+        "current_alt": "",
+        "suggested_alt": "A red apple on a wooden table",
+        "image_url": "https://example.com/apple.jpg"
+      }
+    ],
+    "contrast": [
+      {
+        "element_id": "p_1",
+        "current_fg": "#666666",
+        "current_bg": "#f0f0f0",
+        "ratio": 3.2,
+        "required_ratio": 4.5,
+        "suggested_fg": "#000000",
+        "suggested_ratio": 7.2
+      }
+    ],
+    "aria": [
+      {
+        "element_id": "button_1",
+        "element_type": "button",
+        "issue": "No text or aria-label",
+        "suggested_aria_label": "Submit form"
+      }
+    ]
+  }
+}
+```
+
+### UI Display
+
+The Streamlit interface displays results in expandable sections:
+
+- **Alt Text Issues**: Shows images missing descriptions with AI-generated suggestions
+- **Contrast Issues**: Lists text elements with insufficient contrast and recommended color fixes
+- **ARIA Issues**: Highlights interactive elements needing ARIA labels with suggestions
+- **Export**: Download button to save fixed HTML with all recommendations applied
+
 ## Troubleshooting
 
 ### Model Download Issues
-The first run may take longer as it downloads the BLIP model (~350MB). Subsequent runs will use the cached model.
+**Problem**: First run takes a long time or shows download progress.
+
+**Solution**: The BLIP image captioning model (~350MB) downloads on first use. This is normal and only happens once. Subsequent runs use the cached model. Ensure you have stable internet and sufficient disk space.
 
 ### Memory Issues
-If you encounter memory errors, try analyzing simpler pages or reducing the number of images analyzed.
+**Problem**: Application crashes with "Out of memory" error.
+
+**Solution**: 
+- Try analyzing simpler pages with fewer images
+- Close other applications to free up RAM
+- The system limits analysis to 10 images per page to manage memory usage
+- If issues persist, consider running on a machine with more RAM
 
 ### Network Timeouts
-If a webpage is slow to load, the analysis may timeout. Try with a different URL.
+**Problem**: Analysis fails with "Connection timeout" error.
+
+**Solution**:
+- Check your internet connection
+- Try with a different URL (some servers are slow to respond)
+- The system has a 5-second timeout per request; very slow servers may exceed this
+- Ensure the URL is publicly accessible and not behind authentication
+
+### Invalid URL Errors
+**Problem**: "Invalid URL format" or "Page not accessible" error.
+
+**Solution**:
+- Verify the URL is complete (include `https://` or `http://`)
+- Check that the website is publicly accessible
+- Some websites may block automated access; try a different site
+- Ensure the URL doesn't require authentication
+
+### Image Processing Failures
+**Problem**: Some images show "Failed to process" in the report.
+
+**Solution**:
+- This is normal for images that cannot be downloaded or are in unsupported formats
+- The analysis continues with other images
+- Check that image URLs are publicly accessible
+- Supported formats: JPEG, PNG, GIF, WebP
+
+### Streamlit Connection Issues
+**Problem**: Cannot access the application at `http://localhost:8501`.
+
+**Solution**:
+- Ensure Streamlit is running (check terminal for "You can now view your Streamlit app")
+- Try refreshing the browser
+- Check if port 8501 is already in use; Streamlit will use the next available port
+- Look at the terminal output for the correct URL
+
+### Color Contrast Calculation Issues
+**Problem**: Suggested colors don't seem right or contrast ratio seems incorrect.
+
+**Solution**:
+- The system uses WCAG 2.1 relative luminance formula
+- Ensure colors are properly extracted from CSS (inline styles and classes are supported)
+- Some dynamically-applied colors may not be detected
+- Test with simple HTML pages first to verify functionality
+
+### Export/Download Not Working
+**Problem**: Export button doesn't download the file.
+
+**Solution**:
+- Check browser download settings
+- Ensure you have write permissions in your downloads folder
+- Try a different browser
+- Check browser console for errors (F12 → Console tab)
+
+## Performance Tips
+
+- **Faster Analysis**: Analyze pages with fewer images (system limits to 10)
+- **Better Results**: Use well-structured HTML with semantic elements
+- **Accurate Colors**: Ensure colors are defined in inline styles or simple CSS classes
+- **Reliable Results**: Test with stable, publicly-accessible websites
+
+## Requirements
+
+See `requirements.txt` for all dependencies:
+- **streamlit**: Web UI framework
+- **beautifulsoup4**: HTML parsing
+- **transformers**: BLIP model for image captioning
+- **torch**: Deep learning framework
+- **pillow**: Image processing
+- **webcolors**: Color conversion utilities
+- **requests**: HTTP requests
 
 ## Contributing
 
