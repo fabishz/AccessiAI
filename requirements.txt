@@ -1,0 +1,7 @@
+streamlit==1.28.1
+transformers==4.35.2
+torch==2.1.1
+beautifulsoup4==4.12.2
+webcolors==1.13
+pillow==10.1.0
+requests==2.31.0
