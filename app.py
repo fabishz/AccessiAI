@@ -93,9 +93,19 @@ def is_valid_url(url: str) -> bool:
         True if URL is valid, False otherwise
     """
     try:
+        if not url or not isinstance(url, str):
+            logger.warning("Invalid URL: empty or not a string")
+            return False
+        
         result = urlparse(url)
-        return all([result.scheme, result.netloc])
-    except Exception:
+        is_valid = all([result.scheme, result.netloc])
+        
+        if not is_valid:
+            logger.warning(f"Invalid URL format: {url}")
+        
+        return is_valid
+    except Exception as e:
+        logger.error(f"Error validating URL: {e}")
         return False
 
 
@@ -262,58 +272,77 @@ def display_results(result: dict) -> None:
     Args:
         result: Result dictionary from analyzer
     """
-    if not result.get("success"):
-        st.error("❌ Analysis Failed")
-        errors = result.get("errors", [])
-        for error in errors:
-            st.error(f"• {error}")
-        return
-    
-    report = result.get("report", {})
-    
-    # Display summary
-    st.subheader("📊 Summary")
-    display_summary(report)
-    
-    # Display issues by category
-    issues = report.get("issues", {})
-    
-    st.subheader("🖼️ Alt Text Issues")
-    display_alt_text_issues(issues.get("alt_text", []))
-    
-    st.subheader("🎨 Color Contrast Issues")
-    display_contrast_issues(issues.get("contrast", []))
-    
-    st.subheader("♿ ARIA Label Issues")
-    display_aria_issues(issues.get("aria", []))
-    
-    # Export options
-    st.subheader("📥 Export Options")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("📄 Download JSON Report", key="export_json"):
-            import json
-            json_str = json.dumps(report, indent=2)
-            st.download_button(
-                label="Download JSON",
-                data=json_str,
-                file_name="accessibility_report.json",
-                mime="application/json"
-            )
-    
-    with col2:
-        if st.button("🔧 Download Patched HTML", key="export_html"):
-            patched_html = result.get("patched_html")
-            if patched_html:
-                st.download_button(
-                    label="Download HTML",
-                    data=patched_html,
-                    file_name="patched_webpage.html",
-                    mime="text/html"
-                )
+    try:
+        if not result.get("success"):
+            st.error("❌ Analysis Failed")
+            errors = result.get("errors", [])
+            if errors:
+                for error in errors:
+                    st.error(f"• {error}")
             else:
-                st.warning("Patched HTML not available")
+                st.error("Unknown error occurred during analysis")
+            return
+        
+        report = result.get("report", {})
+        if not report:
+            st.error("❌ No report data available")
+            return
+    
+        # Display summary
+        st.subheader("📊 Summary")
+        display_summary(report)
+        
+        # Display issues by category
+        issues = report.get("issues", {})
+        
+        st.subheader("🖼️ Alt Text Issues")
+        display_alt_text_issues(issues.get("alt_text", []))
+        
+        st.subheader("🎨 Color Contrast Issues")
+        display_contrast_issues(issues.get("contrast", []))
+        
+        st.subheader("♿ ARIA Label Issues")
+        display_aria_issues(issues.get("aria", []))
+        
+        # Export options
+        st.subheader("📥 Export Options")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📄 Download JSON Report", key="export_json"):
+                try:
+                    import json
+                    json_str = json.dumps(report, indent=2)
+                    st.download_button(
+                        label="Download JSON",
+                        data=json_str,
+                        file_name="accessibility_report.json",
+                        mime="application/json"
+                    )
+                except Exception as e:
+                    logger.error(f"Error preparing JSON export: {e}")
+                    st.error("Error preparing JSON export")
+        
+        with col2:
+            if st.button("🔧 Download Patched HTML", key="export_html"):
+                try:
+                    patched_html = result.get("patched_html")
+                    if patched_html:
+                        st.download_button(
+                            label="Download HTML",
+                            data=patched_html,
+                            file_name="patched_webpage.html",
+                            mime="text/html"
+                        )
+                    else:
+                        st.warning("Patched HTML not available")
+                except Exception as e:
+                    logger.error(f"Error preparing HTML export: {e}")
+                    st.error("Error preparing HTML export")
+    
+    except Exception as e:
+        logger.error(f"Error displaying results: {e}")
+        st.error(f"Error displaying results: {e}")
 
 
 def main():
@@ -367,22 +396,31 @@ def main():
     
     # Analysis logic
     if analyze_button:
-        if not url_input:
-            st.error("❌ Please enter a URL")
-        elif not is_valid_url(url_input):
-            st.error("❌ Invalid URL format. Please enter a valid URL (e.g., https://example.com)")
-        else:
-            # Ensure URL has scheme
-            if not url_input.startswith(("http://", "https://")):
-                url_input = "https://" + url_input
-            
-            with st.spinner("🔄 Analyzing webpage... This may take a minute."):
-                logger.info(f"Starting analysis for: {url_input}")
-                result = analyze_webpage_safe(url_input, include_patched_html=True)
+        try:
+            if not url_input:
+                st.error("❌ Please enter a URL")
+                logger.warning("Analysis attempted with empty URL")
+            elif not is_valid_url(url_input):
+                st.error("❌ Invalid URL format. Please enter a valid URL (e.g., https://example.com)")
+                logger.warning(f"Analysis attempted with invalid URL: {url_input}")
+            else:
+                # Ensure URL has scheme
+                if not url_input.startswith(("http://", "https://")):
+                    url_input = "https://" + url_input
+                    logger.debug(f"Added https:// scheme to URL: {url_input}")
                 
-                # Store result in session state for display
-                st.session_state.last_result = result
-                st.session_state.last_url = url_input
+                with st.spinner("🔄 Analyzing webpage... This may take a minute."):
+                    logger.info(f"Starting analysis for: {url_input}")
+                    result = analyze_webpage_safe(url_input, include_patched_html=True)
+                    
+                    # Store result in session state for display
+                    st.session_state.last_result = result
+                    st.session_state.last_url = url_input
+                    logger.info(f"Analysis completed for: {url_input}")
+        
+        except Exception as e:
+            logger.error(f"Error during analysis: {e}")
+            st.error(f"❌ An unexpected error occurred: {e}")
     
     # Display results if available
     if "last_result" in st.session_state:

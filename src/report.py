@@ -31,27 +31,36 @@ def generate_report(
     Returns:
         Dictionary containing structured report with summary and categorized issues
     """
-    # Calculate summary statistics
-    total_issues = len(alt_text_issues) + len(contrast_issues) + len(aria_issues)
-    
-    report = {
-        "url": url,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "summary": {
-            "total_issues": total_issues,
-            "alt_text_issues": len(alt_text_issues),
-            "contrast_issues": len(contrast_issues),
-            "aria_issues": len(aria_issues)
-        },
-        "issues": {
-            "alt_text": _format_alt_text_issues(alt_text_issues),
-            "contrast": _format_contrast_issues(contrast_issues),
-            "aria": _format_aria_issues(aria_issues)
+    try:
+        logger.info(f"Generating report for {url}")
+        
+        # Calculate summary statistics
+        total_issues = len(alt_text_issues) + len(contrast_issues) + len(aria_issues)
+        
+        logger.debug(f"Report summary: {len(alt_text_issues)} alt text, {len(contrast_issues)} contrast, {len(aria_issues)} ARIA issues")
+        
+        report = {
+            "url": url,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "summary": {
+                "total_issues": total_issues,
+                "alt_text_issues": len(alt_text_issues),
+                "contrast_issues": len(contrast_issues),
+                "aria_issues": len(aria_issues)
+            },
+            "issues": {
+                "alt_text": _format_alt_text_issues(alt_text_issues),
+                "contrast": _format_contrast_issues(contrast_issues),
+                "aria": _format_aria_issues(aria_issues)
+            }
         }
-    }
+        
+        logger.info(f"Successfully generated report for {url} with {total_issues} total issues")
+        return report
     
-    logger.info(f"Generated report for {url} with {total_issues} issues")
-    return report
+    except Exception as e:
+        logger.error(f"Error generating report: {e}")
+        raise ValueError(f"Failed to generate report: {e}")
 
 
 def _format_alt_text_issues(issues: List[Dict]) -> List[Dict]:
@@ -168,70 +177,92 @@ def generate_patched_html(
         Modified HTML string with fixes applied
     """
     try:
+        logger.info("Generating patched HTML with accessibility fixes")
         soup = BeautifulSoup(original_html, "html.parser")
+        logger.debug("HTML parsed successfully for patching")
     except Exception as e:
-        logger.error(f"Error parsing HTML: {e}")
+        logger.error(f"Error parsing HTML for patching: {e}")
         return original_html
     
+    alt_text_applied = 0
+    contrast_applied = 0
+    aria_applied = 0
+    
     # Apply alt text fixes
-    for issue in alt_text_issues:
-        element_id = issue.get("element_id", "")
-        suggested_alt = issue.get("suggested_alt", "")
-        
-        if element_id and suggested_alt:
-            try:
-                element = soup.find(id=element_id)
-                if element and element.name == "img":
-                    element["alt"] = suggested_alt
-                    logger.debug(f"Applied alt text fix to {element_id}")
-            except Exception as e:
-                logger.warning(f"Could not apply alt text fix to {element_id}: {e}")
+    try:
+        logger.debug(f"Applying {len(alt_text_issues)} alt text fixes")
+        for issue in alt_text_issues:
+            element_id = issue.get("element_id", "")
+            suggested_alt = issue.get("suggested_alt", "")
+            
+            if element_id and suggested_alt:
+                try:
+                    element = soup.find(id=element_id)
+                    if element and element.name == "img":
+                        element["alt"] = suggested_alt
+                        logger.debug(f"Applied alt text fix to {element_id}")
+                        alt_text_applied += 1
+                except Exception as e:
+                    logger.warning(f"Could not apply alt text fix to {element_id}: {e}")
+    except Exception as e:
+        logger.error(f"Error applying alt text fixes: {e}")
     
     # Apply contrast fixes
-    for issue in contrast_issues:
-        element_id = issue.get("element_id", "")
-        suggested_fg = issue.get("suggested_fg", "")
-        
-        if element_id and suggested_fg:
-            try:
-                element = soup.find(id=element_id)
-                if element:
-                    # Update inline style with new color
-                    current_style = element.get("style", "")
-                    
-                    # Remove existing color property if present
-                    style_parts = []
-                    for part in current_style.split(";"):
-                        if "color:" not in part.lower() or "background" in part.lower():
-                            if part.strip():
-                                style_parts.append(part.strip())
-                    
-                    # Add new color
-                    new_style = "; ".join(style_parts)
-                    if new_style:
-                        new_style += f"; color: {suggested_fg}"
-                    else:
-                        new_style = f"color: {suggested_fg}"
-                    
-                    element["style"] = new_style
-                    logger.debug(f"Applied contrast fix to {element_id}")
-            except Exception as e:
-                logger.warning(f"Could not apply contrast fix to {element_id}: {e}")
+    try:
+        logger.debug(f"Applying {len(contrast_issues)} contrast fixes")
+        for issue in contrast_issues:
+            element_id = issue.get("element_id", "")
+            suggested_fg = issue.get("suggested_fg", "")
+            
+            if element_id and suggested_fg:
+                try:
+                    element = soup.find(id=element_id)
+                    if element:
+                        # Update inline style with new color
+                        current_style = element.get("style", "")
+                        
+                        # Remove existing color property if present
+                        style_parts = []
+                        for part in current_style.split(";"):
+                            if "color:" not in part.lower() or "background" in part.lower():
+                                if part.strip():
+                                    style_parts.append(part.strip())
+                        
+                        # Add new color
+                        new_style = "; ".join(style_parts)
+                        if new_style:
+                            new_style += f"; color: {suggested_fg}"
+                        else:
+                            new_style = f"color: {suggested_fg}"
+                        
+                        element["style"] = new_style
+                        logger.debug(f"Applied contrast fix to {element_id}")
+                        contrast_applied += 1
+                except Exception as e:
+                    logger.warning(f"Could not apply contrast fix to {element_id}: {e}")
+    except Exception as e:
+        logger.error(f"Error applying contrast fixes: {e}")
     
     # Apply ARIA fixes
-    for issue in aria_issues:
-        element_id = issue.get("element_id", "")
-        suggested_label = issue.get("suggested_aria_label", "")
-        
-        if element_id and suggested_label:
-            try:
-                element = soup.find(id=element_id)
-                if element:
-                    element["aria-label"] = suggested_label
-                    logger.debug(f"Applied ARIA fix to {element_id}")
-            except Exception as e:
-                logger.warning(f"Could not apply ARIA fix to {element_id}: {e}")
+    try:
+        logger.debug(f"Applying {len(aria_issues)} ARIA fixes")
+        for issue in aria_issues:
+            element_id = issue.get("element_id", "")
+            suggested_label = issue.get("suggested_aria_label", "")
+            
+            if element_id and suggested_label:
+                try:
+                    element = soup.find(id=element_id)
+                    if element:
+                        element["aria-label"] = suggested_label
+                        logger.debug(f"Applied ARIA fix to {element_id}")
+                        aria_applied += 1
+                except Exception as e:
+                    logger.warning(f"Could not apply ARIA fix to {element_id}: {e}")
+    except Exception as e:
+        logger.error(f"Error applying ARIA fixes: {e}")
     
+    logger.info(f"Patched HTML generated: {alt_text_applied} alt text, {contrast_applied} contrast, {aria_applied} ARIA fixes applied")
     return str(soup.prettify())
 
 
@@ -255,35 +286,55 @@ def export_report(
         ValueError: If format is not supported
         IOError: If file cannot be written
     """
-    if format not in ["json", "html"]:
-        raise ValueError(f"Unsupported export format: {format}. Use 'json' or 'html'")
-    
-    # Generate output path if not provided
-    if output_path is None:
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        filename = f"accessibility_report_{timestamp}.{format}"
-        output_path = str(Path("reports") / filename)
-    
-    # Create reports directory if it doesn't exist
-    output_file = Path(output_path)
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    
     try:
-        if format == "json":
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(report, f, indent=2, ensure_ascii=False)
+        if format not in ["json", "html"]:
+            error_msg = f"Unsupported export format: {format}. Use 'json' or 'html'"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
-        elif format == "html":
-            html_content = _generate_html_report(report)
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
+        logger.info(f"Exporting report in {format} format")
         
-        logger.info(f"Report exported to {output_path}")
-        return output_path
+        # Generate output path if not provided
+        if output_path is None:
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            filename = f"accessibility_report_{timestamp}.{format}"
+            output_path = str(Path("reports") / filename)
+            logger.debug(f"Generated output path: {output_path}")
+        
+        # Create reports directory if it doesn't exist
+        output_file = Path(output_path)
+        try:
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"Created directory: {output_file.parent}")
+        except Exception as e:
+            logger.error(f"Could not create directory {output_file.parent}: {e}")
+            raise IOError(f"Could not create directory for report: {e}")
+        
+        try:
+            if format == "json":
+                logger.debug("Writing JSON report")
+                with open(output_path, "w", encoding="utf-8") as f:
+                    json.dump(report, f, indent=2, ensure_ascii=False)
+            
+            elif format == "html":
+                logger.debug("Generating and writing HTML report")
+                html_content = _generate_html_report(report)
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(html_content)
+            
+            logger.info(f"Report successfully exported to {output_path}")
+            return output_path
+        
+        except IOError as e:
+            logger.error(f"IO error writing report to {output_path}: {e}")
+            raise IOError(f"Could not write report to {output_path}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error writing report: {e}")
+            raise IOError(f"Unexpected error writing report: {e}")
     
-    except IOError as e:
-        logger.error(f"Error writing report to {output_path}: {e}")
-        raise IOError(f"Could not write report to {output_path}: {e}")
+    except Exception as e:
+        logger.error(f"Error exporting report: {e}")
+        raise
 
 
 def _generate_html_report(report: Dict) -> str:

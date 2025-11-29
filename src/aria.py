@@ -173,32 +173,52 @@ def check_aria_compliance(elements: List[Dict]) -> List[Dict]:
     Returns:
         List of dictionaries containing ARIA compliance issues and suggestions
     """
+    if not elements:
+        logger.info("No interactive elements to check for ARIA compliance")
+        return []
+    
+    logger.info(f"Checking ARIA compliance for {len(elements)} interactive elements")
     aria_issues = []
+    compliant_count = 0
+    issue_count = 0
     
     for element in elements:
-        tag = element.get("tag", "").lower()
+        try:
+            tag = element.get("tag", "").lower()
+            element_id = element.get("element_id", "unknown")
+            
+            # Check if element already has a label
+            has_label = element.get("has_label", False)
+            
+            if has_label:
+                # Element already has accessible label
+                logger.debug(f"Element {element_id} ({tag}): Already has accessible label")
+                compliant_count += 1
+                continue
+            
+            # Element lacks accessible label - suggest one
+            suggested_label = suggest_aria_label(element)
+            
+            if suggested_label:
+                issue_data = {
+                    "element_id": element_id,
+                    "element_type": tag,
+                    "issue": _get_issue_description(element),
+                    "suggested_aria_label": suggested_label,
+                    "current_aria_label": element.get("aria_label", ""),
+                    "current_text": element.get("text_content", "")
+                }
+                logger.warning(f"Element {element_id} ({tag}): {issue_data['issue']}")
+                aria_issues.append(issue_data)
+                issue_count += 1
+            else:
+                logger.debug(f"Element {element_id} ({tag}): Could not generate suggestion")
         
-        # Check if element already has a label
-        has_label = element.get("has_label", False)
-        
-        if has_label:
-            # Element already has accessible label
+        except Exception as e:
+            logger.error(f"Error checking ARIA compliance for element: {e}")
             continue
-        
-        # Element lacks accessible label - suggest one
-        suggested_label = suggest_aria_label(element)
-        
-        if suggested_label:
-            issue_data = {
-                "element_id": element.get("element_id"),
-                "element_type": tag,
-                "issue": _get_issue_description(element),
-                "suggested_aria_label": suggested_label,
-                "current_aria_label": element.get("aria_label", ""),
-                "current_text": element.get("text_content", "")
-            }
-            aria_issues.append(issue_data)
     
+    logger.info(f"ARIA compliance check complete: {compliant_count} compliant, {issue_count} issues found")
     return aria_issues
 
 

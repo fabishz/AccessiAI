@@ -162,45 +162,70 @@ def check_contrast(elements: List[Dict]) -> List[Dict]:
     Returns:
         List of elements with contrast ratio and pass/fail status
     """
+    if not elements:
+        logger.info("No elements to check for contrast")
+        return []
+    
+    logger.info(f"Checking contrast for {len(elements)} elements")
     contrast_issues = []
+    successful_count = 0
+    failed_count = 0
+    skipped_count = 0
     
     for element in elements:
-        fg_color = element.get("fg_color")
-        bg_color = element.get("bg_color")
-        
-        # Skip if colors are missing
-        if not fg_color or not bg_color:
-            continue
-        
-        # Parse colors to hex format
-        fg_hex = _parse_color(fg_color)
-        bg_hex = _parse_color(bg_color)
-        
-        if not fg_hex or not bg_hex:
-            logger.warning(f"Could not parse colors for element {element.get('element_id')}")
-            continue
-        
         try:
-            ratio = calculate_contrast_ratio(fg_hex, bg_hex)
+            fg_color = element.get("fg_color")
+            bg_color = element.get("bg_color")
+            element_id = element.get("element_id", "unknown")
             
-            issue_data = {
-                "element_id": element.get("element_id"),
-                "tag": element.get("tag"),
-                "text_content": element.get("text_content"),
-                "current_fg": fg_hex,
-                "current_bg": bg_hex,
-                "ratio": ratio,
-                "passes": ratio >= WCAG_CONTRAST_THRESHOLD
-            }
+            # Skip if colors are missing
+            if not fg_color or not bg_color:
+                logger.debug(f"Element {element_id}: Skipped (missing color information)")
+                skipped_count += 1
+                continue
             
-            # Only include failures
-            if not issue_data["passes"]:
-                contrast_issues.append(issue_data)
+            # Parse colors to hex format
+            fg_hex = _parse_color(fg_color)
+            bg_hex = _parse_color(bg_color)
+            
+            if not fg_hex or not bg_hex:
+                logger.warning(f"Element {element_id}: Could not parse colors - FG: {fg_color}, BG: {bg_color}")
+                skipped_count += 1
+                continue
+            
+            try:
+                ratio = calculate_contrast_ratio(fg_hex, bg_hex)
+                
+                issue_data = {
+                    "element_id": element_id,
+                    "tag": element.get("tag"),
+                    "text_content": element.get("text_content"),
+                    "current_fg": fg_hex,
+                    "current_bg": bg_hex,
+                    "ratio": ratio,
+                    "passes": ratio >= WCAG_CONTRAST_THRESHOLD
+                }
+                
+                # Only include failures
+                if not issue_data["passes"]:
+                    logger.warning(f"Element {element_id}: Contrast ratio {ratio}:1 below threshold {WCAG_CONTRAST_THRESHOLD}:1")
+                    contrast_issues.append(issue_data)
+                    failed_count += 1
+                else:
+                    logger.debug(f"Element {element_id}: Contrast ratio {ratio}:1 passes threshold")
+                    successful_count += 1
+            
+            except ValueError as e:
+                logger.warning(f"Element {element_id}: Error calculating contrast - {e}")
+                skipped_count += 1
+                continue
         
-        except ValueError as e:
-            logger.warning(f"Error calculating contrast for element {element.get('element_id')}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error checking contrast for element: {e}")
+            skipped_count += 1
             continue
     
+    logger.info(f"Contrast check complete: {successful_count} passed, {failed_count} failed, {skipped_count} skipped")
     return contrast_issues
 
 
@@ -220,35 +245,56 @@ def suggest_color_fix(current_fg: str, bg_color: str, target_ratio: float = 4.5)
         ValueError: If color format is invalid
     """
     try:
+        logger.debug(f"Suggesting color fix for FG: {current_fg}, BG: {bg_color}")
+        
         bg_hex = _parse_color(bg_color)
         if not bg_hex:
             raise ValueError(f"Invalid background color: {bg_color}")
         
         bg_rgb = hex_to_rgb(bg_hex)
         bg_luminance = calculate_luminance(bg_rgb)
+        logger.debug(f"Background luminance: {bg_luminance}")
+    
     except ValueError as e:
-        raise ValueError(f"Error processing background color: {e}")
+        error_msg = f"Error processing background color: {e}"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
     
-    # Determine if we should use black or white based on background luminance
-    # If background is light, use black; if dark, use white
-    if bg_luminance > 0.5:
-        # Light background - use black
-        suggested_color = "#000000"
-    else:
-        # Dark background - use white
-        suggested_color = "#ffffff"
-    
-    # Verify the suggested color achieves target ratio
     try:
-        ratio = calculate_contrast_ratio(suggested_color, bg_hex)
-        if ratio >= target_ratio:
-            return suggested_color
-    except ValueError:
-        pass
+        # Determine if we should use black or white based on background luminance
+        # If background is light, use black; if dark, use white
+        if bg_luminance > 0.5:
+            # Light background - use black
+            suggested_color = "#000000"
+            logger.debug("Light background detected, suggesting black text")
+        else:
+            # Dark background - use white
+            suggested_color = "#ffffff"
+            logger.debug("Dark background detected, suggesting white text")
+        
+        # Verify the suggested color achieves target ratio
+        try:
+            ratio = calculate_contrast_ratio(suggested_color, bg_hex)
+            logger.debug(f"Suggested color ratio: {ratio}:1 (target: {target_ratio}:1)")
+            if ratio >= target_ratio:
+                logger.info(f"Suggested color {suggested_color} achieves target ratio {ratio}:1")
+                return suggested_color
+        except ValueError as e:
+            logger.warning(f"Error verifying suggested color: {e}")
+        
+        # If simple black/white doesn't work, try to find optimal color
+        # For now, return the best of black/white
+        logger.debug("Comparing black and white for best contrast")
+        black_ratio = calculate_contrast_ratio("#000000", bg_hex)
+        white_ratio = calculate_contrast_ratio("#ffffff", bg_hex)
+        
+        best_color = "#000000" if black_ratio >= white_ratio else "#ffffff"
+        best_ratio = max(black_ratio, white_ratio)
+        logger.info(f"Selected {best_color} with ratio {best_ratio}:1")
+        return best_color
     
-    # If simple black/white doesn't work, try to find optimal color
-    # For now, return the best of black/white
-    black_ratio = calculate_contrast_ratio("#000000", bg_hex)
-    white_ratio = calculate_contrast_ratio("#ffffff", bg_hex)
-    
-    return "#000000" if black_ratio >= white_ratio else "#ffffff"
+    except Exception as e:
+        logger.error(f"Unexpected error suggesting color fix: {e}")
+        # Fallback to black
+        logger.warning("Falling back to black text color")
+        return "#000000"

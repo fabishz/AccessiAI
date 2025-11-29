@@ -62,14 +62,19 @@ def analyze_webpage(url: str, include_patched_html: bool = False) -> Dict:
         except ValueError as e:
             logger.error(f"Failed to fetch webpage: {e}")
             raise ValueError(f"Failed to fetch webpage: {e}")
+        except Exception as e:
+            error_msg = f"Unexpected error fetching webpage: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Parse HTML
         try:
             soup = BeautifulSoup(original_html, "html.parser")
             logger.info("HTML parsed successfully")
         except Exception as e:
-            logger.error(f"Failed to parse HTML: {e}")
-            raise ValueError(f"Failed to parse HTML: {e}")
+            error_msg = f"Failed to parse HTML: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Step 2: Analyze images and generate alt text
         logger.info("Step 2: Analyzing images...")
@@ -99,6 +104,7 @@ def analyze_webpage(url: str, include_patched_html: bool = False) -> Dict:
             # Clear model cache to free memory
             try:
                 clear_model_cache()
+                logger.debug("Model cache cleared after image analysis")
             except Exception as e:
                 logger.warning(f"Error clearing model cache: {e}")
         
@@ -181,7 +187,7 @@ def analyze_webpage(url: str, include_patched_html: bool = False) -> Dict:
     
     except ValueError as e:
         # Re-raise validation errors
-        logger.error(f"Analysis failed: {e}")
+        logger.error(f"Analysis failed with validation error: {e}")
         raise
     
     except Exception as e:
@@ -210,14 +216,18 @@ def analyze_webpage_safe(url: str, include_patched_html: bool = False) -> Dict:
         - success: Boolean indicating if analysis succeeded
     """
     try:
-        return analyze_webpage(url, include_patched_html)
+        logger.info(f"Safe analysis wrapper called for: {url}")
+        result = analyze_webpage(url, include_patched_html)
+        logger.info("Analysis completed successfully")
+        return result
     
     except ValueError as e:
-        logger.error(f"Validation error: {e}")
+        error_msg = str(e)
+        logger.error(f"Validation error during analysis: {error_msg}")
         return {
             "report": None,
             "patched_html": None,
-            "errors": [str(e)],
+            "errors": [error_msg],
             "success": False
         }
     
