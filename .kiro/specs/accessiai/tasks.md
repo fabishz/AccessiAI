@@ -7,7 +7,7 @@
   - Initialize git repository with README.md template
   - _Requirements: 1.1, 6.1_
 
-- [ ] 2. Implement webpage parser module
+- [x] 2. Implement webpage parser module
   - Create `src/parser.py` with `fetch_webpage()` function including timeout and error handling
   - Implement `parse_images()` to extract image elements (limit to 10)
   - Implement `parse_interactive_elements()` to extract buttons, inputs, links
@@ -15,7 +15,7 @@
   - Add error handling for invalid URLs and network failures
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 7.1, 7.4_
 
-- [ ] 3. Implement contrast checker module
+- [x] 3. Implement contrast checker module
   - Create `src/contrast.py` with `hex_to_rgb()` conversion function
   - Implement `calculate_luminance()` using WCAG formula
   - Implement `calculate_contrast_ratio()` to compute contrast between two colors
@@ -23,7 +23,7 @@
   - Implement `suggest_color_fix()` to recommend corrected colors achieving 4.5:1 ratio
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 4. Implement ARIA suggester module
+- [x] 4. Implement ARIA suggester module
   - Create `src/aria.py` with `suggest_aria_label()` function for different element types
   - Implement `check_aria_compliance()` to identify missing labels and suggest fixes
   - Add rule-based logic for buttons, inputs, and links
