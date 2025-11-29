@@ -29,7 +29,7 @@
   - Add rule-based logic for buttons, inputs, and links
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 5. Implement image analysis module with BLIP model
+- [x] 5. Implement image analysis module with BLIP model
   - Create `src/image_analyzer.py` with `download_image()` function
   - Implement `generate_alt_text()` using Salesforce/blip-image-captioning-base model
   - Implement `process_images()` to batch process images with error handling
@@ -37,21 +37,21 @@
   - Handle image download failures gracefully
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 7.2_
 
-- [ ] 6. Implement report generator module
+- [x] 6. Implement report generator module
   - Create `src/report.py` with `generate_report()` function to compile all findings
   - Implement JSON report structure with summary and categorized issues
   - Implement `generate_patched_html()` to create HTML with suggested fixes
   - Implement `export_report()` to save report as JSON or HTML file
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-- [ ] 7. Create main analysis orchestrator
+- [x] 7. Create main analysis orchestrator
   - Create `src/analyzer.py` with `analyze_webpage()` function that orchestrates all modules
   - Implement error handling and logging throughout the pipeline
   - Add timeout mechanisms to prevent hanging
   - Ensure graceful degradation when individual components fail
   - _Requirements: 1.1, 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 8. Build Streamlit frontend application
+- [x] 8. Build Streamlit frontend application
   - Create `app.py` as main Streamlit application
   - Implement page title "AccessiAI: AI-Powered Web Accessibility Enhancer"
   - Add URL input field with validation
