@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccessiAI Report</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+        }
+        .header p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .summary-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .issues-section {
+            margin-bottom: 30px;
+        }
+        .issues-section h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .issue {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .issue.alt-text {
+            border-left-color: #f39c12;
+        }
+        .issue.contrast {
+            border-left-color: #e74c3c;
+        }
+        .issue.aria {
+            border-left-color: #9b59b6;
+        }
+        .issue-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .issue-detail {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .issue-detail strong {
+            color: #555;
+            min-width: 120px;
+            display: inline-block;
+        }
+        .suggestion {
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .no-issues {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>AccessiAI Accessibility Report</h1>
+        <p><strong>URL:</strong> https://example.com</p>
+        <p><strong>Generated:</strong> 2025-11-29T17:47:26.899810Z</p>
+    </div>
+    
+    <div class="summary">
+        <div class="summary-card">
+            <h3>Total Issues</h3>
+            <div class="number">3</div>
+        </div>
+        <div class="summary-card">
+            <h3>Alt Text Issues</h3>
+            <div class="number">1</div>
+        </div>
+        <div class="summary-card">
+            <h3>Contrast Issues</h3>
+            <div class="number">1</div>
+        </div>
+        <div class="summary-card">
+            <h3>ARIA Issues</h3>
+            <div class="number">1</div>
+        </div>
+    </div>
+<div class="issues-section">
+<h2>Alt Text Issues</h2>
+    <div class="issue alt-text">
+        <div class="issue-title">Image: img_1</div>
+        <div class="issue-detail"><strong>Current Alt:</strong> </div>
+        <div class="issue-detail"><strong>Image URL:</strong> https://example.com/image.jpg</div>
+        <div class="suggestion"><strong>Suggested Alt:</strong> A sample image</div>
+    </div>
+</div>
+<div class="issues-section">
+<h2>Color Contrast Issues</h2>
+    <div class="issue contrast">
+        <div class="issue-title">Element: p_1 (p)</div>
+        <div class="issue-detail"><strong>Text:</strong> Sample text</div>
+        <div class="issue-detail"><strong>Current Ratio:</strong> 3.2:1 (Required: 4.5:1)</div>
+        <div class="issue-detail"><strong>Current Colors:</strong> Text #666666 on #f0f0f0</div>
+        <div class="suggestion"><strong>Suggested Fix:</strong> Change text color to #000000 for 18.43:1 ratio</div>
+    </div>
+</div>
+<div class="issues-section">
+<h2>ARIA Label Issues</h2>
+    <div class="issue aria">
+        <div class="issue-title">Button: button_1</div>
+        <div class="issue-detail"><strong>Issue:</strong> No text or aria-label</div>
+        <div class="issue-detail"><strong>Current Text:</strong> </div>
+        <div class="suggestion"><strong>Suggested aria-label:</strong> "Submit form"</div>
+    </div>
+</div>
+</body>
+</html>

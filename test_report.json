@@ -1,0 +1,43 @@
+{
+  "url": "https://example.com",
+  "timestamp": "2025-11-29T17:47:26.899810Z",
+  "summary": {
+    "total_issues": 3,
+    "alt_text_issues": 1,
+    "contrast_issues": 1,
+    "aria_issues": 1
+  },
+  "issues": {
+    "alt_text": [
+      {
+        "element_id": "img_1",
+        "current_alt": "",
+        "suggested_alt": "A sample image",
+        "image_url": "https://example.com/image.jpg"
+      }
+    ],
+    "contrast": [
+      {
+        "element_id": "p_1",
+        "tag": "p",
+        "text_content": "Sample text",
+        "current_fg": "#666666",
+        "current_bg": "#f0f0f0",
+        "ratio": 3.2,
+        "required_ratio": 4.5,
+        "suggested_fg": "#000000",
+        "suggested_ratio": 18.43
+      }
+    ],
+    "aria": [
+      {
+        "element_id": "button_1",
+        "element_type": "button",
+        "issue": "No text or aria-label",
+        "suggested_aria_label": "Submit form",
+        "current_aria_label": "",
+        "current_text": ""
+      }
+    ]
+  }
+}
